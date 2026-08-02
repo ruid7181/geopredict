@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import proj4 from "proj4";
+import type { LayerGroup, Map as LeafletMap } from "leaflet";
 
 type Layer = "prediction" | "uncertainty" | "error";
 type Route = "fast" | "custom";
 
 type PlacePoint = {
   id: number;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
   observed: number;
   value: number;
   uncertainty: number;
@@ -16,6 +18,9 @@ type PlacePoint = {
   sqft: number;
   grade: number;
 };
+
+const utmZone10North = "+proj=utm +zone=10 +datum=WGS84 +units=m +no_defs";
+const wgs84 = "+proj=longlat +datum=WGS84 +no_defs";
 
 const layerMeta: Record<Layer, { label: string; low: string; high: string }> = {
   prediction: { label: "Prediction", low: "Lower", high: "Higher" },
@@ -38,29 +43,25 @@ function parseDemoData(csv: string): PlacePoint[] {
   const lines = csv.trim().split(/\r?\n/);
   const raw = lines.slice(1).map((line, index) => {
     const cells = line.split(",");
+    const [lng, lat] = proj4(utmZone10North, wgs84, [Number(cells[9]), Number(cells[10])]);
     return {
       id: Number(cells[0] || index),
       sqft: Number(cells[2]),
       grade: Number(cells[4]),
-      x: Number(cells[9]),
-      y: Number(cells[10]),
+      lat,
+      lng,
       observed: Number(cells[11]),
     };
   }).filter((point) => Object.values(point).every(Number.isFinite));
 
-  const xs = raw.map((point) => point.x);
-  const ys = raw.map((point) => point.y);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
+  const longitudes = raw.map((point) => point.lng);
+  const minLng = Math.min(...longitudes);
+  const maxLng = Math.max(...longitudes);
 
   return raw.map((point, index) => ({
     ...point,
-    x: (point.x - minX) / (maxX - minX),
-    y: 1 - (point.y - minY) / (maxY - minY),
     value: point.observed + (seededNoise(index, 11) - 0.5) * 0.18,
-    uncertainty: 0.08 + seededNoise(index, 3) * 0.38 + Math.abs(0.5 - (point.x - minX) / (maxX - minX)) * 0.16,
+    uncertainty: 0.08 + seededNoise(index, 3) * 0.38 + Math.abs(0.5 - (point.lng - minLng) / (maxLng - minLng)) * 0.16,
     error: 0.03 + seededNoise(index, 7) * 0.46,
   }));
 }
@@ -72,8 +73,8 @@ function fallbackPoints(): PlacePoint[] {
     const observed = 4.9 + x * 0.8 + (1 - y) * 0.7 + seededNoise(index, 9) * 0.3;
     return {
       id: index,
-      x,
-      y,
+      lat: 47.49 + y * 0.28,
+      lng: -122.44 + x * 0.25,
       observed,
       value: observed + (seededNoise(index, 11) - 0.5) * 0.18,
       uncertainty: 0.08 + seededNoise(index, 3) * 0.42,
@@ -90,117 +91,121 @@ function SpatialMap({ layer, points, selected, onSelect }: {
   selected: PlacePoint | null;
   onSelect: (point: PlacePoint) => void;
 }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const boundsRef = useRef({ width: 1, height: 1, pad: 34 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const pointsLayerRef = useRef<LayerGroup | null>(null);
+  const selectionLayerRef = useRef<LayerGroup | null>(null);
+  const fittedPointsRef = useRef<PlacePoint[] | null>(null);
+  const onSelectRef = useRef(onSelect);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
 
-    const draw = () => {
-      const rect = canvas.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-      canvas.width = Math.round(rect.width * ratio);
-      canvas.height = Math.round(rect.height * ratio);
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      const width = rect.width;
-      const height = rect.height;
-      const pad = Math.min(38, width * 0.06);
-      boundsRef.current = { width, height, pad };
+  useEffect(() => {
+    let disposed = false;
 
-      context.fillStyle = "#e8ebe4";
-      context.fillRect(0, 0, width, height);
+    async function initialiseMap() {
+      const container = containerRef.current;
+      if (!container || mapRef.current) return;
+      const L = await import("leaflet");
+      if (disposed || !containerRef.current) return;
 
-      context.strokeStyle = "rgba(56, 74, 64, 0.11)";
-      context.lineWidth = 1;
-      for (let i = -2; i < 12; i += 1) {
-        context.beginPath();
-        context.moveTo(i * width * 0.12, 0);
-        context.lineTo(i * width * 0.12 + width * 0.36, height);
-        context.stroke();
-      }
-      for (let i = 1; i < 9; i += 1) {
-        context.beginPath();
-        context.moveTo(0, i * height * 0.12 + Math.sin(i) * 24);
-        context.bezierCurveTo(width * 0.32, i * height * 0.1, width * 0.67, i * height * 0.15, width, i * height * 0.11);
-        context.stroke();
-      }
+      const map = L.map(containerRef.current, {
+        attributionControl: true,
+        zoomControl: true,
+        preferCanvas: true,
+      }).setView([47.6062, -122.3321], 10);
 
-      context.fillStyle = "rgba(119, 172, 181, 0.24)";
-      context.beginPath();
-      context.moveTo(width * 0.78, 0);
-      context.bezierCurveTo(width * 0.72, height * 0.25, width * 0.88, height * 0.44, width * 0.8, height * 0.67);
-      context.bezierCurveTo(width * 0.76, height * 0.82, width * 0.92, height * 0.9, width * 0.9, height);
-      context.lineTo(width, height);
-      context.lineTo(width, 0);
-      context.closePath();
-      context.fill();
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }).addTo(map);
+
+      mapRef.current = map;
+      pointsLayerRef.current = L.layerGroup().addTo(map);
+      selectionLayerRef.current = L.layerGroup().addTo(map);
+      setMapReady(true);
+      requestAnimationFrame(() => map.invalidateSize());
+    }
+
+    initialiseMap();
+    return () => {
+      disposed = true;
+      mapRef.current?.remove();
+      mapRef.current = null;
+      pointsLayerRef.current = null;
+      selectionLayerRef.current = null;
+      fittedPointsRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !pointsLayerRef.current || points.length === 0) return;
+    let disposed = false;
+
+    async function drawPoints() {
+      const L = await import("leaflet");
+      if (disposed || !pointsLayerRef.current || !mapRef.current) return;
 
       const values = points.map((point) => point[layer === "prediction" ? "value" : layer]);
       const min = Math.min(...values);
       const max = Math.max(...values);
       const colors = palettes[layer];
+      pointsLayerRef.current.clearLayers();
 
       points.forEach((point) => {
         const value = point[layer === "prediction" ? "value" : layer];
         const normalized = (value - min) / (max - min || 1);
         const color = colors[Math.min(colors.length - 1, Math.floor(normalized * colors.length))];
-        const px = pad + point.x * (width - pad * 2);
-        const py = pad + point.y * (height - pad * 2);
-        context.beginPath();
-        context.arc(px, py, width < 600 ? 2.2 : 3.1, 0, Math.PI * 2);
-        context.fillStyle = color;
-        context.globalAlpha = 0.82;
-        context.fill();
+        L.circleMarker([point.lat, point.lng], {
+          radius: 4,
+          color: "rgba(255,255,255,.72)",
+          weight: 0.7,
+          fillColor: color,
+          fillOpacity: 0.86,
+        }).on("click", () => onSelectRef.current(point)).addTo(pointsLayerRef.current!);
       });
-      context.globalAlpha = 1;
 
-      if (selected) {
-        const px = pad + selected.x * (width - pad * 2);
-        const py = pad + selected.y * (height - pad * 2);
-        context.beginPath();
-        context.arc(px, py, 8, 0, Math.PI * 2);
-        context.strokeStyle = "#111b17";
-        context.lineWidth = 2;
-        context.stroke();
-        context.beginPath();
-        context.arc(px, py, 12, 0, Math.PI * 2);
-        context.strokeStyle = "rgba(255,255,255,.92)";
-        context.lineWidth = 3;
-        context.stroke();
+      if (fittedPointsRef.current !== points) {
+        const bounds = L.latLngBounds(points.map((point) => [point.lat, point.lng] as [number, number]));
+        mapRef.current.fitBounds(bounds, { padding: [28, 28], maxZoom: 11 });
+        fittedPointsRef.current = points;
       }
-    };
+    }
 
-    draw();
-    const observer = new ResizeObserver(draw);
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, [layer, points, selected]);
+    drawPoints();
+    return () => { disposed = true; };
+  }, [layer, mapReady, points]);
 
-  const chooseNearest = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const { width, height, pad } = boundsRef.current;
-    const x = (event.clientX - rect.left - pad) / (width - pad * 2);
-    const y = (event.clientY - rect.top - pad) / (height - pad * 2);
-    let nearest = points[0];
-    let distance = Infinity;
-    points.forEach((point) => {
-      const next = (point.x - x) ** 2 + (point.y - y) ** 2;
-      if (next < distance) {
-        nearest = point;
-        distance = next;
-      }
-    });
-    if (nearest) onSelect(nearest);
-  };
+  useEffect(() => {
+    if (!mapReady || !selectionLayerRef.current) return;
+    let disposed = false;
+
+    async function drawSelection() {
+      const L = await import("leaflet");
+      if (disposed || !selectionLayerRef.current) return;
+      selectionLayerRef.current.clearLayers();
+      if (!selected) return;
+      L.circleMarker([selected.lat, selected.lng], {
+        radius: 9,
+        color: "#111b17",
+        weight: 3,
+        fillColor: "#fffef9",
+        fillOpacity: 0.35,
+      }).addTo(selectionLayerRef.current);
+    }
+
+    drawSelection();
+    return () => { disposed = true; };
+  }, [mapReady, selected]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="spatial-canvas"
-      onPointerDown={chooseNearest}
+    <div
+      ref={containerRef}
+      className="spatial-map"
+      role="application"
       aria-label={`Interactive ${layerMeta[layer].label.toLowerCase()} map of the Seattle housing demo dataset`}
     />
   );

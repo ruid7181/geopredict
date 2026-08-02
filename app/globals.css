@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 :root {
   --ink: #17211b;
@@ -108,18 +109,22 @@ legend { padding: 0; margin: 0 0 10px; font-family: var(--mono); font-size: 9px;
 .layer-tabs button.active::after { background: var(--coral); }
 .demo-badge { font-family: var(--mono); font-size: 9px; text-transform: uppercase; padding: 7px 9px; border: 1px solid #bec4bc; }
 .map-canvas-wrap { position: relative; overflow: hidden; min-height: 0; }
-.spatial-canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
-.map-title { position: absolute; left: 22px; top: 18px; display: flex; flex-direction: column; padding: 10px 12px; background: rgba(255,254,249,.91); border: 1px solid rgba(23,33,27,.18); backdrop-filter: blur(7px); }
+.spatial-map { width: 100%; height: 100%; min-height: 300px; background: #e8ebe4; }
+.spatial-map .leaflet-tile-pane { filter: saturate(.58) contrast(.93) brightness(1.04); }
+.spatial-map .leaflet-control-zoom { border: 1px solid rgba(23,33,27,.24); border-radius: 0; box-shadow: none; }
+.spatial-map .leaflet-control-zoom a { border-radius: 0; color: var(--ink); }
+.spatial-map .leaflet-control-attribution { font-size: 8px; background: rgba(255,254,249,.85); }
+.map-title { position: absolute; z-index: 600; pointer-events: none; left: 56px; top: 18px; display: flex; flex-direction: column; padding: 10px 12px; background: rgba(255,254,249,.91); border: 1px solid rgba(23,33,27,.18); backdrop-filter: blur(7px); }
 .map-title span { font-family: var(--mono); font-size: 8px; text-transform: uppercase; color: var(--muted); }
 .map-title strong { font-size: 15px; margin-top: 2px; }
-.north-arrow { position: absolute; right: 20px; top: 18px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: var(--mono); font-size: 9px; }
+.north-arrow { position: absolute; z-index: 600; pointer-events: none; right: 20px; top: 18px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: var(--mono); font-size: 9px; }
 .north-arrow i { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 17px solid var(--ink); }
-.map-legend { position: absolute; left: 22px; bottom: 18px; display: grid; grid-template-columns: auto 128px auto; align-items: center; gap: 8px; background: rgba(255,254,249,.91); padding: 8px 10px; border: 1px solid rgba(23,33,27,.18); font-size: 8px; font-family: var(--mono); }
+.map-legend { position: absolute; z-index: 600; pointer-events: none; left: 22px; bottom: 28px; display: grid; grid-template-columns: auto 128px auto; align-items: center; gap: 8px; background: rgba(255,254,249,.91); padding: 8px 10px; border: 1px solid rgba(23,33,27,.18); font-size: 8px; font-family: var(--mono); }
 .legend-ramp { display: block; height: 7px; }
 .legend-ramp.prediction { background: linear-gradient(90deg, #143d3a, #237166, #58a88d, #c1ca6c, #f1c14f, #ed6b40); }
 .legend-ramp.uncertainty { background: linear-gradient(90deg, #f0eee3, #a6c291, #65a58e, #327c79, #18545c); }
 .legend-ramp.error { background: linear-gradient(90deg, #f4f0e8, #f5d7a3, #efa25f, #df6848, #a83c43, #642d3c); }
-.point-inspector { position: absolute; right: 18px; bottom: 18px; width: 230px; background: var(--ink); color: white; padding: 14px; transform: translateY(calc(100% + 30px)); transition: transform .24s ease; }
+.point-inspector { position: absolute; z-index: 700; right: 18px; bottom: 28px; width: 230px; background: var(--ink); color: white; padding: 14px; transform: translateY(calc(100% + 40px)); transition: transform .24s ease; }
 .point-inspector.visible { transform: translateY(0); }
 .point-inspector > button { position: absolute; right: 8px; top: 6px; border: 0; background: transparent; color: #aeb8b2; cursor: pointer; }
 .point-inspector small { display: block; font-family: var(--mono); font-size: 8px; color: #aeb8b2; text-transform: uppercase; }
@@ -252,7 +257,7 @@ legend { padding: 0; margin: 0 0 10px; font-family: var(--mono); font-size: 9px;
   .layer-tabs button::after { left: 9px; right: 9px; }
   .demo-badge { display: none; }
   .map-legend { grid-template-columns: auto 80px auto; left: 10px; bottom: 10px; }
-  .map-title { left: 10px; top: 10px; }
+  .map-title { left: 52px; top: 10px; }
   .north-arrow { right: 12px; top: 12px; }
   .point-inspector { right: 10px; bottom: 46px; width: 210px; }
   .map-footer { font-size: 7px; padding: 0 9px; gap: 8px; }

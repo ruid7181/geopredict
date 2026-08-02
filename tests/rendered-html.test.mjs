@@ -44,5 +44,8 @@ test("keeps the finished site free of starter preview code", async () => {
   assert.match(layout, /generateMetadata/);
   assert.match(app, /seattle-housing-demo\.csv/);
   assert.match(app, /"prediction" \| "uncertainty" \| "error"/);
+  assert.match(app, /\+proj=utm \+zone=10/);
+  assert.match(app, /tile\.openstreetmap\.org/);
+  assert.doesNotMatch(app, /<canvas|bezierCurveTo/);
   assert.doesNotMatch(`${page}\n${layout}\n${app}\n${packageJson}`, /SkeletonPreview|codex-preview|react-loading-skeleton/);
 });
