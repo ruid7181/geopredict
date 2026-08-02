@@ -15,12 +15,20 @@ type PlacePoint = {
   value: number;
   uncertainty: number;
   error: number;
+  gaValue: number;
+  gaUncertainty: number;
+  gaError: number;
   sqft: number;
   grade: number;
 };
 
 const utmZone10North = "+proj=utm +zone=10 +datum=WGS84 +units=m +no_defs";
 const wgs84 = "+proj=longlat +datum=WGS84 +no_defs";
+
+const engineLabels: Record<Route, string> = {
+  fast: "TabPFN-GSA",
+  custom: "GeoAggregator",
+};
 
 const layerMeta: Record<Layer, { label: string; low: string; high: string }> = {
   prediction: { label: "Prediction", low: "Lower", high: "Higher" },
@@ -58,12 +66,20 @@ function parseDemoData(csv: string): PlacePoint[] {
   const minLng = Math.min(...longitudes);
   const maxLng = Math.max(...longitudes);
 
-  return raw.map((point, index) => ({
-    ...point,
-    value: point.observed + (seededNoise(index, 11) - 0.5) * 0.18,
-    uncertainty: 0.08 + seededNoise(index, 3) * 0.38 + Math.abs(0.5 - (point.lng - minLng) / (maxLng - minLng)) * 0.16,
-    error: 0.03 + seededNoise(index, 7) * 0.46,
-  }));
+  return raw.map((point, index) => {
+    const longitudePosition = (point.lng - minLng) / (maxLng - minLng);
+    const edgeDistance = Math.abs(0.5 - longitudePosition);
+    const localPattern = Math.sin((point.lat - 47.5) * 24 + (point.lng + 122.3) * 18) * 0.025;
+    return {
+      ...point,
+      value: point.observed + (seededNoise(index, 11) - 0.5) * 0.18,
+      uncertainty: 0.08 + seededNoise(index, 3) * 0.38 + edgeDistance * 0.16,
+      error: 0.03 + seededNoise(index, 7) * 0.46,
+      gaValue: point.observed + (seededNoise(index, 13) - 0.5) * 0.13 + localPattern,
+      gaUncertainty: 0.06 + seededNoise(index, 17) * 0.3 + edgeDistance * 0.1,
+      gaError: 0.025 + seededNoise(index, 19) * 0.34,
+    };
+  });
 }
 
 function fallbackPoints(): PlacePoint[] {
@@ -79,14 +95,29 @@ function fallbackPoints(): PlacePoint[] {
       value: observed + (seededNoise(index, 11) - 0.5) * 0.18,
       uncertainty: 0.08 + seededNoise(index, 3) * 0.42,
       error: 0.03 + seededNoise(index, 7) * 0.46,
+      gaValue: observed + (seededNoise(index, 13) - 0.5) * 0.13,
+      gaUncertainty: 0.06 + seededNoise(index, 17) * 0.34,
+      gaError: 0.025 + seededNoise(index, 19) * 0.34,
       sqft: 700 + Math.round(seededNoise(index, 4) * 2800),
       grade: 5 + Math.round(seededNoise(index, 6) * 6),
     };
   });
 }
 
-function SpatialMap({ layer, points, selected, onSelect }: {
+function pointMetric(point: PlacePoint, layer: Layer, route: Route) {
+  if (route === "custom") {
+    if (layer === "prediction") return point.gaValue;
+    if (layer === "uncertainty") return point.gaUncertainty;
+    return point.gaError;
+  }
+  if (layer === "prediction") return point.value;
+  if (layer === "uncertainty") return point.uncertainty;
+  return point.error;
+}
+
+function SpatialMap({ layer, route, points, selected, onSelect }: {
   layer: Layer;
+  route: Route;
   points: PlacePoint[];
   selected: PlacePoint | null;
   onSelect: (point: PlacePoint) => void;
@@ -149,14 +180,14 @@ function SpatialMap({ layer, points, selected, onSelect }: {
       const L = await import("leaflet");
       if (disposed || !pointsLayerRef.current || !mapRef.current) return;
 
-      const values = points.map((point) => point[layer === "prediction" ? "value" : layer]);
+      const values = points.map((point) => pointMetric(point, layer, route));
       const min = Math.min(...values);
       const max = Math.max(...values);
       const colors = palettes[layer];
       pointsLayerRef.current.clearLayers();
 
       points.forEach((point) => {
-        const value = point[layer === "prediction" ? "value" : layer];
+        const value = pointMetric(point, layer, route);
         const normalized = (value - min) / (max - min || 1);
         const color = colors[Math.min(colors.length - 1, Math.floor(normalized * colors.length))];
         L.circleMarker([point.lat, point.lng], {
@@ -177,7 +208,7 @@ function SpatialMap({ layer, points, selected, onSelect }: {
 
     drawPoints();
     return () => { disposed = true; };
-  }, [layer, mapReady, points]);
+  }, [layer, mapReady, points, route]);
 
   useEffect(() => {
     if (!mapReady || !selectionLayerRef.current) return;
@@ -206,7 +237,7 @@ function SpatialMap({ layer, points, selected, onSelect }: {
       ref={containerRef}
       className="spatial-map"
       role="application"
-      aria-label={`Interactive ${layerMeta[layer].label.toLowerCase()} map of the Seattle housing demo dataset`}
+      aria-label={`Interactive ${engineLabels[route]} ${layerMeta[layer].label.toLowerCase()} map of the Seattle housing demo dataset`}
     />
   );
 }
@@ -220,7 +251,7 @@ export function GeoPredictApp() {
   const [layer, setLayer] = useState<Layer>("prediction");
   const [points, setPoints] = useState<PlacePoint[]>(fallbackPoints);
   const [selected, setSelected] = useState<PlacePoint | null>(null);
-  const engine = route === "fast" ? "TabPFN-GSA" : "GeoAggregator";
+  const engine = engineLabels[route];
 
   useEffect(() => {
     fetch("/data/seattle-housing-demo.csv")
@@ -233,12 +264,12 @@ export function GeoPredictApp() {
     if (!selected) return null;
     return {
       observed: selected.observed.toFixed(2),
-      value: selected.value.toFixed(2),
-      uncertainty: selected.uncertainty.toFixed(2),
-      error: selected.error.toFixed(2),
+      value: pointMetric(selected, "prediction", route).toFixed(2),
+      uncertainty: pointMetric(selected, "uncertainty", route).toFixed(2),
+      error: pointMetric(selected, "error", route).toFixed(2),
       sqft: Math.round(selected.sqft).toLocaleString(),
     };
-  }, [selected]);
+  }, [route, selected]);
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
@@ -289,10 +320,10 @@ export function GeoPredictApp() {
               <legend>Modelling route</legend>
               <div className="route-switch">
                 <button className={route === "fast" ? "active" : ""} onClick={() => setRoute("fast")} aria-pressed={route === "fast"}>
-                  <span>Fast start</span><small>Small data, rapid inference</small>
+                  <span>TabPFN-GSA</span><small>Fast start / small data</small>
                 </button>
                 <button className={route === "custom" ? "active" : ""} onClick={() => setRoute("custom")} aria-pressed={route === "custom"}>
-                  <span>Custom training</span><small>Larger, tailored models</small>
+                  <span>GeoAggregator</span><small>Custom training / larger data</small>
                 </button>
               </div>
             </fieldset>
@@ -320,15 +351,15 @@ export function GeoPredictApp() {
             </div>
 
             <div className="map-canvas-wrap">
-              <SpatialMap layer={layer} points={points} selected={selected} onSelect={setSelected} />
-              <div className="map-title"><span>{layerMeta[layer].label}</span><strong>Seattle, WA</strong></div>
+              <SpatialMap layer={layer} route={route} points={points} selected={selected} onSelect={setSelected} />
+              <div className="map-title"><span>{engine} / {layerMeta[layer].label}</span><strong>Seattle, WA</strong></div>
               <div className="north-arrow" aria-hidden="true"><span>N</span><i /></div>
               <div className="map-legend"><span>{layerMeta[layer].low}</span><i className={`legend-ramp ${layer}`} /><span>{layerMeta[layer].high}</span></div>
               <div className={`point-inspector ${selected ? "visible" : ""}`}>
                 {pointSummary ? (
                   <>
                     <button onClick={() => setSelected(null)} aria-label="Close location details">x</button>
-                    <small>Location {selected?.id}</small>
+                    <small>{engine} preview / location {selected?.id}</small>
                     <strong>{pointSummary.sqft} sq ft / grade {selected?.grade}</strong>
                     <div><span>Observed log price</span><b>{pointSummary.observed}</b></div>
                     <div><span>Prediction preview</span><b>{pointSummary.value}</b></div>
@@ -408,7 +439,7 @@ export function GeoPredictApp() {
 
       <section className="about-section" id="about">
         <div><p className="section-number">PROJECT TEAM</p><h2>Open tools for geographically responsible AI.</h2></div>
-        <div className="team-list"><div><strong>Rui Deng</strong><span>Technical lead</span></div><div><strong>Ziqi Li</strong><span>Research and development</span></div><div><strong>Mingshu Wang</strong><span>Research and impact</span></div></div>
+        <div className="team-list"><div><strong>Rui Deng</strong><span>Technical lead</span></div><div><strong>Ziqi Li</strong><span>Research and development</span></div><div><strong>Mingshu Wang</strong><span>Research lead and corresponding author</span></div></div>
         <div className="application-note"><span>Prototypes for Humanity 2026</span><p>GeoPredict is being developed as an open toolkit and demonstrator for spatially reliable AI.</p><a href="https://www.prototypesforhumanity.com/latestnews/stories/how-to-apply" target="_blank" rel="noreferrer">View programme <span>↗</span></a></div>
       </section>
 
