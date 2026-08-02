@@ -26,6 +26,10 @@ test("server-renders the GeoPredict product experience", async () => {
   assert.match(html, /Public-data demonstration/);
   assert.match(html, /1,000 public Seattle housing records/);
   assert.match(html, /Interactive GeoPredict product demonstration/);
+  assert.match(html, /See more than a prediction/);
+  assert.match(html, /Published benchmark evidence/);
+  assert.match(html, /0\.919/);
+  assert.match(html, /4\.6K/);
   assert.match(html, /TabPFN-GSA/);
   assert.match(html, /GeoAggregator/);
   assert.match(html, /property="og:image" content="http:\/\/localhost(?::3000)?\/og\.png"/i);
@@ -51,6 +55,10 @@ test("keeps the finished site free of starter preview code", async () => {
   assert.match(app, /Mingshu Wang<\/strong><span>Research lead/);
   assert.match(app, /gaValue.*gaUncertainty.*gaError/s);
   assert.match(app, /<span>TabPFN-GSA<\/span>.*<span>GeoAggregator<\/span>/s);
+  assert.match(app, /they are not benchmark claims/);
+  assert.match(app, /AAAI-25 paper/);
+  assert.match(app, /AAAI\/article\/view\/33259/);
+  assert.match(app, /IJGIS study/);
   assert.doesNotMatch(app, /<canvas|bezierCurveTo/);
   assert.doesNotMatch(`${page}\n${layout}\n${app}\n${packageJson}`, /SkeletonPreview|codex-preview|react-loading-skeleton/);
 });

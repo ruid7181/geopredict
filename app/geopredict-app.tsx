@@ -42,6 +42,20 @@ const palettes: Record<Layer, string[]> = {
   error: ["#f4f0e8", "#f5d7a3", "#efa25f", "#df6848", "#a83c43", "#642d3c"],
 };
 
+const gsaPublishedResults = [
+  { dataset: "PM2.5", tabpfn: 0.811, gsa: 0.811 },
+  { dataset: "Election", tabpfn: 0.929, gsa: 0.933 },
+  { dataset: "Housing", tabpfn: 0.894, gsa: 0.919 },
+  { dataset: "Poverty", tabpfn: null, gsa: 0.847 },
+];
+
+const gaHousingResults = [
+  { model: "XGBoost", r2: 0.888 },
+  { model: "GCNNWR", r2: 0.895 },
+  { model: "Vanilla mini", r2: 0.906 },
+  { model: "GA-mini", r2: 0.911 },
+];
+
 function seededNoise(index: number, salt: number) {
   const raw = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
   return raw - Math.floor(raw);
@@ -242,6 +256,141 @@ function SpatialMap({ layer, route, points, selected, onSelect }: {
   );
 }
 
+function DemoDiagnostics({ points, route }: { points: PlacePoint[]; route: Route }) {
+  const diagnostics = useMemo(() => {
+    const observed = points.map((point) => point.observed);
+    const predicted = points.map((point) => pointMetric(point, "prediction", route));
+    const min = Math.min(...observed, ...predicted);
+    const max = Math.max(...observed, ...predicted);
+    const binCount = 7;
+    const observedBins = Array(binCount).fill(0) as number[];
+    const predictedBins = Array(binCount).fill(0) as number[];
+    const addToBin = (value: number, bins: number[]) => {
+      const index = Math.min(binCount - 1, Math.floor(((value - min) / (max - min || 1)) * binCount));
+      bins[index] += 1;
+    };
+    observed.forEach((value) => addToBin(value, observedBins));
+    predicted.forEach((value) => addToBin(value, predictedBins));
+    const maxBin = Math.max(...observedBins, ...predictedBins, 1);
+
+    const latitudes = points.map((point) => point.lat).sort((a, b) => a - b);
+    const longitudes = points.map((point) => point.lng).sort((a, b) => a - b);
+    const medianLat = latitudes[Math.floor(latitudes.length / 2)] ?? 47.6062;
+    const medianLng = longitudes[Math.floor(longitudes.length / 2)] ?? -122.3321;
+    const foldMap = new Map<string, number[]>([["NW", []], ["NE", []], ["SW", []], ["SE", []]]);
+    points.forEach((point) => {
+      const vertical = point.lat >= medianLat ? "N" : "S";
+      const horizontal = point.lng < medianLng ? "W" : "E";
+      foldMap.get(`${vertical}${horizontal}`)?.push(pointMetric(point, "error", route));
+    });
+    const folds = [...foldMap].map(([label, values]) => ({
+      label,
+      value: values.reduce((sum, value) => sum + value, 0) / (values.length || 1),
+    }));
+    const maxFold = Math.max(...folds.map((fold) => fold.value), 1);
+
+    const confidence = [
+      { label: "More certain", count: 0 },
+      { label: "Watch", count: 0 },
+      { label: "Review", count: 0 },
+    ];
+    points.forEach((point) => {
+      const value = pointMetric(point, "uncertainty", route);
+      confidence[value < 0.2 ? 0 : value < 0.35 ? 1 : 2].count += 1;
+    });
+
+    return { observedBins, predictedBins, maxBin, min, max, folds, maxFold, confidence };
+  }, [points, route]);
+
+  return (
+    <section className="diagnostics-section" aria-labelledby="diagnostics-title">
+      <div className="diagnostics-heading">
+        <p className="section-number">LIVE OUTPUTS</p>
+        <div><h2 id="diagnostics-title">See more than a prediction.</h2><p>Three diagnostics update with the selected engine. They describe the Seattle interface preview; they are not benchmark claims.</p></div>
+        <span>{engineLabels[route]} / {points.length.toLocaleString()} locations</span>
+      </div>
+
+      <div className="diagnostics-grid">
+        <figure className="diagnostic-figure distribution-figure">
+          <header><span>01</span><h3>Observed vs preview distribution</h3></header>
+          <div className="histogram" aria-label="Observed and preview prediction distributions">
+            {diagnostics.observedBins.map((count, index) => (
+              <div className="histogram-bin" key={index}>
+                <i className="observed-bar" style={{ height: `${Math.max(4, count / diagnostics.maxBin * 100).toFixed(2)}%` }} />
+                <i className="predicted-bar" style={{ height: `${Math.max(4, diagnostics.predictedBins[index] / diagnostics.maxBin * 100).toFixed(2)}%` }} />
+              </div>
+            ))}
+          </div>
+          <div className="histogram-axis"><span>{diagnostics.min.toFixed(1)}</span><span>Log price</span><span>{diagnostics.max.toFixed(1)}</span></div>
+          <figcaption><i className="observed-key" /> Observed <i className="predicted-key" /> {engineLabels[route]} preview</figcaption>
+        </figure>
+
+        <figure className="diagnostic-figure">
+          <header><span>02</span><h3>Spatial fold error</h3></header>
+          <div className="fold-chart">
+            {diagnostics.folds.map((fold) => (
+              <div className="fold-row" key={fold.label}><span>{fold.label}</span><i><b style={{ width: `${(fold.value / diagnostics.maxFold * 100).toFixed(2)}%` }} /></i><strong>{fold.value.toFixed(2)}</strong></div>
+            ))}
+          </div>
+          <figcaption>Quadrant check / lower is better</figcaption>
+        </figure>
+
+        <figure className="diagnostic-figure">
+          <header><span>03</span><h3>Confidence profile</h3></header>
+          <div className="confidence-chart">
+            {diagnostics.confidence.map((band, index) => {
+              const percent = Math.round((band.count / Math.max(points.length, 1)) * 100);
+              return <div className={`confidence-band confidence-${index + 1}`} key={band.label} style={{ flexGrow: Math.max(percent, 7) }}><strong>{percent}%</strong><span>{band.label}</span></div>;
+            })}
+          </div>
+          <figcaption>Locations grouped by preview uncertainty</figcaption>
+        </figure>
+      </div>
+
+      <div className="output-steps" aria-label="Result workflow">
+        {[['01', 'Choose', 'Match the engine to data scale'], ['02', 'Validate', 'Use geographic folds, not random splits'], ['03', 'Inspect', 'Read errors and uncertainty by place'], ['04', 'Export', 'Package maps with source and limits']].map(([number, title, text]) => (
+          <div key={number}><span>{number}</span><strong>{title}</strong><p>{text}</p></div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PublishedEvidence() {
+  const chartWidth = (value: number) => `${Math.max(5, Math.min(100, ((value - 0.75) / 0.2) * 100)).toFixed(2)}%`;
+  return (
+    <div className="published-evidence">
+      <div className="evidence-callout"><span>Published benchmark evidence</span><strong>Accuracy where local context matters. Efficiency when data grows.</strong><p>Values below are reproduced from the two peer-reviewed papers, separate from the Seattle interface preview.</p></div>
+
+      <figure className="benchmark-figure">
+        <header><span>TabPFN-GSA / real-world R²</span><b>Higher is better</b></header>
+        <div className="benchmark-legend"><i className="base-key" /> TabPFN <i className="gsa-key" /> Best GSA</div>
+        <div className="benchmark-groups">
+          {gsaPublishedResults.map((result) => (
+            <div className="benchmark-group" key={result.dataset}>
+              <span>{result.dataset}</span>
+              <div>{result.tabpfn === null ? <em>Not completed</em> : <i className="base-bar" style={{ width: chartWidth(result.tabpfn) }}><b>{result.tabpfn.toFixed(3)}</b></i>}</div>
+              <div><i className="gsa-bar" style={{ width: chartWidth(result.gsa) }}><b>{result.gsa.toFixed(3)}</b></i></div>
+            </div>
+          ))}
+        </div>
+        <figcaption>GSA reaches R² 0.919 on Housing and completes the 71,900-row Poverty dataset where standard TabPFN was not run. <a href="https://doi.org/10.1080/13658816.2026.2691066" target="_blank" rel="noreferrer">IJGIS study ↗</a></figcaption>
+      </figure>
+
+      <figure className="benchmark-figure ga-benchmark">
+        <header><span>GeoAggregator / Housing R²</span><b>Published result</b></header>
+        <div className="ga-bars">
+          {gaHousingResults.map((result) => (
+            <div key={result.model}><span>{result.model}</span><i><b className={result.model === "GA-mini" ? "highlight" : ""} style={{ width: chartWidth(result.r2) }} /></i><strong>{result.r2.toFixed(3)}</strong></div>
+          ))}
+        </div>
+        <div className="efficiency-strip"><div><strong>4.6K</strong><span>GA-mini parameters</span></div><div><strong>1.6M</strong><span>FLOPs / inference</span></div><div><strong>~1,900×</strong><span>fewer parameters than GCNNWR</span></div></div>
+        <figcaption>GA-mini records the strongest Housing R² in the reported comparison while remaining lightweight. <a href="https://ojs.aaai.org/index.php/AAAI/article/view/33259" target="_blank" rel="noreferrer">AAAI-25 paper ↗</a></figcaption>
+      </figure>
+    </div>
+  );
+}
+
 function LogoMark() {
   return <span className="logo-mark" aria-hidden="true"><i /><i /><i /></span>;
 }
@@ -374,6 +523,8 @@ export function GeoPredictApp() {
         </div>
       </section>
 
+      <DemoDiagnostics points={points} route={route} />
+
       <section className="problem-band">
         <p className="section-number">01 / THE PROBLEM</p>
         <div><h2>Rows live somewhere.</h2><p>Most machine learning treats observations as independent. Places are not. Nearby locations influence one another, relationships change across regions, and random data splits can make a weak model look reliable.</p></div>
@@ -413,11 +564,12 @@ export function GeoPredictApp() {
 
       <section className="evidence-section" id="evidence">
         <div className="section-heading"><p className="section-number">04 / RESEARCH TO PRODUCT</p><h2>Built on published methods.<br />Designed for use.</h2></div>
+        <PublishedEvidence />
         <div className="evidence-grid">
           <article className="paper-card">
             <div className="paper-image"><img src="/research/geoaggregator-architecture.png" alt="GeoAggregator research architecture diagram" /></div>
             <span>AAAI 2025</span><h3>GeoAggregator</h3><p>An Efficient Transformer Model for Geo-Spatial Tabular Data</p>
-            <a href="https://ojs.aaai.org/index.php/AAAI/article/view/33243" target="_blank" rel="noreferrer">Read publication</a>
+            <a href="https://ojs.aaai.org/index.php/AAAI/article/view/33259" target="_blank" rel="noreferrer">Read publication</a>
           </article>
           <article className="paper-card">
             <div className="paper-image"><img src="/research/gsa-attention.png" alt="Geospatial sparse attention method diagram" /></div>
