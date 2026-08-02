@@ -391,6 +391,82 @@ function PublishedEvidence() {
   );
 }
 
+const workflowSteps = [
+  { title: "Prepare", detail: "Bring coordinates, target and predictors into one spatial table.", signal: "1,000 rows checked" },
+  { title: "Diagnose", detail: "Measure dependence, heterogeneity and leakage risk before modelling.", signal: "Spatial structure found" },
+  { title: "Route", detail: "Match rapid small-data work to GSA and tailored training to GeoAggregator.", signal: "Engine selected" },
+  { title: "Predict", detail: "Combine local neighbourhoods with the wider geographic context.", signal: "Local estimates ready" },
+  { title: "Validate", detail: "Hold out geographic folds and locate where errors concentrate.", signal: "Four folds compared" },
+  { title: "Map", detail: "Export prediction, uncertainty and validation evidence together.", signal: "Decision map packaged" },
+];
+
+function WorkflowAnimation() {
+  const [activeStep, setActiveStep] = useState(0);
+  const [playing, setPlaying] = useState(true);
+
+  useEffect(() => {
+    if (!playing || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => setActiveStep((step) => (step + 1) % workflowSteps.length), 2200);
+    return () => window.clearInterval(timer);
+  }, [playing]);
+
+  const selectStep = (index: number) => {
+    setActiveStep(index);
+    setPlaying(false);
+  };
+
+  return (
+    <div className={`workflow-animation workflow-active-${activeStep}`}>
+      <div className="workflow-animation-head">
+        <div>
+          <span>Stage {String(activeStep + 1).padStart(2, "0")} / {String(workflowSteps.length).padStart(2, "0")}</span>
+          <strong>{workflowSteps[activeStep].title}</strong>
+          <p>{workflowSteps[activeStep].detail}</p>
+        </div>
+        <div className="workflow-signal"><span>Live signal</span><strong>{workflowSteps[activeStep].signal}</strong></div>
+        <button type="button" onClick={() => setPlaying((value) => !value)} aria-label={playing ? "Pause workflow animation" : "Play workflow animation"} title={playing ? "Pause animation" : "Play animation"}>{playing ? "Ⅱ" : "▶"}</button>
+      </div>
+
+      <div className="pipeline-visual">
+        <div className="pipeline-source">
+          <header><span>Input</span><b>Spatial table</b></header>
+          <div className="table-preview">
+            <div><b>x</b><b>y</b><b>price</b></div>
+            <div><span>552217</span><span>5274945</span><span>6.09</span></div>
+            <div><span>565692</span><span>5272758</span><span>5.79</span></div>
+            <div><span>557041</span><span>5245362</span><span>5.51</span></div>
+            <div><span>548825</span><span>5264468</span><span>6.21</span></div>
+          </div>
+          <i className="source-scanner" />
+        </div>
+
+        <div className="pipeline-path">
+          <i className="pipeline-line" />
+          <i className="pipeline-progress" style={{ width: `${((activeStep + 1) / workflowSteps.length * 100).toFixed(2)}%` }} />
+          <i className="pipeline-token" style={{ left: `${(activeStep / (workflowSteps.length - 1) * 100).toFixed(2)}%` }} />
+          {workflowSteps.map((step, index) => (
+            <div className={`pipeline-node ${index === activeStep ? "active" : ""} ${index < activeStep ? "complete" : ""}`} key={step.title}><i /><span>{step.title}</span></div>
+          ))}
+        </div>
+
+        <div className="pipeline-output">
+          <header><span>Output</span><b>Evidence map</b></header>
+          <div className="output-map" aria-hidden="true">
+            {Array.from({ length: 24 }, (_, index) => <i key={index} />)}
+          </div>
+          <div className="output-layers"><span>Prediction</span><span>Error</span><span>Uncertainty</span></div>
+        </div>
+      </div>
+
+      <div className="workflow-controls" aria-label="Workflow stages">
+        {workflowSteps.map((step, index) => (
+          <button type="button" key={step.title} className={index === activeStep ? "active" : ""} aria-pressed={index === activeStep} onClick={() => selectStep(index)}><span>{String(index + 1).padStart(2, "0")}</span><strong>{step.title}</strong></button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LogoMark() {
   return <span className="logo-mark" aria-hidden="true"><i /><i /><i /></span>;
 }
@@ -534,14 +610,10 @@ export function GeoPredictApp() {
       <section className="workflow-section" id="workflow">
         <div className="section-heading">
           <p className="section-number">02 / ONE WORKFLOW</p>
-          <h2>From a spatial table to a decision-ready map.</h2>
-          <p>One product governs the whole journey. The model is a component inside the workflow, not the workflow itself.</p>
+          <h2>Watch a spatial table become a decision-ready map.</h2>
+          <p>One product governs the whole journey. Follow each stage, pause on a decision, or let the workflow run from input to evidence.</p>
         </div>
-        <div className="workflow-track">
-          {[["01", "Prepare", "Coordinates, target and features"], ["02", "Diagnose", "Dependence and heterogeneity"], ["03", "Route", "Choose the right spatial engine"], ["04", "Predict", "Fit with place-aware context"], ["05", "Validate", "Test across geographic folds"], ["06", "Map", "Prediction, error and uncertainty"]].map(([number, title, text]) => (
-            <article key={number}><span>{number}</span><i /><h3>{title}</h3><p>{text}</p></article>
-          ))}
-        </div>
+        <WorkflowAnimation />
       </section>
 
       <section className="engines-section">
