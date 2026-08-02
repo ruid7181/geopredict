@@ -9,6 +9,7 @@ type PlacePoint = {
   id: number;
   x: number;
   y: number;
+  observed: number;
   value: number;
   uncertainty: number;
   error: number;
@@ -43,7 +44,7 @@ function parseDemoData(csv: string): PlacePoint[] {
       grade: Number(cells[4]),
       x: Number(cells[9]),
       y: Number(cells[10]),
-      value: Number(cells[11]),
+      observed: Number(cells[11]),
     };
   }).filter((point) => Object.values(point).every(Number.isFinite));
 
@@ -58,6 +59,7 @@ function parseDemoData(csv: string): PlacePoint[] {
     ...point,
     x: (point.x - minX) / (maxX - minX),
     y: 1 - (point.y - minY) / (maxY - minY),
+    value: point.observed + (seededNoise(index, 11) - 0.5) * 0.18,
     uncertainty: 0.08 + seededNoise(index, 3) * 0.38 + Math.abs(0.5 - (point.x - minX) / (maxX - minX)) * 0.16,
     error: 0.03 + seededNoise(index, 7) * 0.46,
   }));
@@ -67,11 +69,13 @@ function fallbackPoints(): PlacePoint[] {
   return Array.from({ length: 340 }, (_, index) => {
     const x = seededNoise(index, 2);
     const y = seededNoise(index, 5);
+    const observed = 4.9 + x * 0.8 + (1 - y) * 0.7 + seededNoise(index, 9) * 0.3;
     return {
       id: index,
       x,
       y,
-      value: 4.9 + x * 0.8 + (1 - y) * 0.7 + seededNoise(index, 9) * 0.3,
+      observed,
+      value: observed + (seededNoise(index, 11) - 0.5) * 0.18,
       uncertainty: 0.08 + seededNoise(index, 3) * 0.42,
       error: 0.03 + seededNoise(index, 7) * 0.46,
       sqft: 700 + Math.round(seededNoise(index, 4) * 2800),
@@ -223,6 +227,7 @@ export function GeoPredictApp() {
   const pointSummary = useMemo(() => {
     if (!selected) return null;
     return {
+      observed: selected.observed.toFixed(2),
       value: selected.value.toFixed(2),
       uncertainty: selected.uncertainty.toFixed(2),
       error: selected.error.toFixed(2),
@@ -237,25 +242,36 @@ export function GeoPredictApp() {
       <header className="site-header">
         <a className="brand" href="#top" aria-label="GeoPredict home"><LogoMark /><span>GeoPredict</span></a>
         <nav aria-label="Primary navigation">
+          <button onClick={() => scrollTo("demo")}>Live demo</button>
           <button onClick={() => scrollTo("workflow")}>How it works</button>
           <button onClick={() => scrollTo("evidence")}>Evidence</button>
-          <a href="https://github.com/ruid7181/TabPFN-GSA" target="_blank" rel="noreferrer">Open source</a>
         </nav>
         <button className="header-cta" onClick={() => scrollTo("about")}>Project brief</button>
       </header>
 
-      <section className="product-hero" id="top">
+      <section className="poster-hero" id="top" aria-labelledby="site-title">
+        <h1 className="sr-only" id="site-title">GeoPredict: AI that knows where it is.</h1>
+        <div className="poster-visual">
+          <img src="/og.png" alt="GeoPredict concept artwork showing a place-aware prediction map" fetchPriority="high" />
+        </div>
+        <div className="poster-actionbar">
+          <span>Concept artwork / live demonstration below uses public Seattle housing data</span>
+          <button onClick={() => scrollTo("demo")}>Explore the Seattle demo <b aria-hidden="true">↓</b></button>
+        </div>
+      </section>
+
+      <section className="product-hero" id="demo">
         <div className="hero-copy">
-          <p className="eyebrow"><span /> Spatial prediction workspace</p>
-          <h1>AI that knows<br />where it is.</h1>
-          <p className="hero-intro">GeoPredict turns geospatial tables into reliable, place-aware predictions by joining spatial diagnosis, model routing and uncertainty mapping in one workflow.</p>
+          <p className="eyebrow"><span /> Public-data demonstration</p>
+          <h2>Seattle housing,<br />mapped by place.</h2>
+          <p className="hero-intro"><strong>Real data.</strong> The workspace loads 1,000 public Seattle housing records with projected coordinates, eight property features and observed log prices. Prediction, uncertainty and error layers remain an interface preview until benchmark outputs are connected.</p>
         </div>
 
         <div className="workspace" aria-label="Interactive GeoPredict product demonstration">
           <aside className="workspace-controls">
             <div className="control-heading">
               <span className="status-dot" />
-              <div><small>Dataset ready</small><strong>Seattle housing</strong></div>
+              <div><small>Public dataset</small><strong>Seattle housing</strong></div>
             </div>
 
             <div className="data-summary">
@@ -295,7 +311,7 @@ export function GeoPredictApp() {
                   <button key={item} className={layer === item ? "active" : ""} onClick={() => setLayer(item)} role="tab" aria-selected={layer === item}>{layerMeta[item].label}</button>
                 ))}
               </div>
-              <span className="demo-badge">Interactive demo</span>
+              <span className="demo-badge">Public data</span>
             </div>
 
             <div className="map-canvas-wrap">
@@ -309,14 +325,15 @@ export function GeoPredictApp() {
                     <button onClick={() => setSelected(null)} aria-label="Close location details">x</button>
                     <small>Location {selected?.id}</small>
                     <strong>{pointSummary.sqft} sq ft / grade {selected?.grade}</strong>
-                    <div><span>Prediction</span><b>{pointSummary.value}</b></div>
+                    <div><span>Observed log price</span><b>{pointSummary.observed}</b></div>
+                    <div><span>Prediction preview</span><b>{pointSummary.value}</b></div>
                     <div><span>Uncertainty</span><b>{pointSummary.uncertainty}</b></div>
                     <div><span>CV error</span><b>{pointSummary.error}</b></div>
                   </>
                 ) : <p>Select a point to inspect its local result.</p>}
               </div>
             </div>
-            <footer className="map-footer"><span>Source: GA-sklearn Seattle housing sample</span><span>Prototype outputs are illustrative</span></footer>
+            <footer className="map-footer"><span>Public Seattle housing sample / 1,000 observations</span><span>Model layers are an interface preview</span></footer>
           </div>
         </div>
       </section>

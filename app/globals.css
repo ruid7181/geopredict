@@ -20,6 +20,7 @@ button, a { font: inherit; }
 button { color: inherit; }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .site-header {
   height: 72px;
@@ -50,13 +51,23 @@ img { display: block; max-width: 100%; }
 .header-cta { justify-self: end; border: 1px solid var(--ink); background: transparent; padding: 10px 15px; font-size: 12px; font-weight: 800; cursor: pointer; }
 .header-cta:hover { background: var(--ink); color: white; }
 
-.product-hero { padding: 28px 3.5vw 54px; min-height: calc(100vh - 72px); }
+.poster-hero { background: var(--ink); }
+.poster-visual { height: clamp(360px, calc(100svh - 170px), 680px); overflow: hidden; background: var(--paper); }
+.poster-visual img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.poster-actionbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 0 3.5vw; color: white; border-top: 1px solid rgba(255,255,255,.18); }
+.poster-actionbar > span { font-family: var(--mono); font-size: 9px; text-transform: uppercase; color: #b8c2bc; }
+.poster-actionbar button { border: 0; background: var(--yellow); color: var(--ink); padding: 11px 14px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 24px; }
+.poster-actionbar button:hover { background: white; }
+.poster-actionbar button b { font-size: 15px; font-weight: 500; }
+
+.product-hero { padding: 94px 3.5vw 104px; }
 .hero-copy { max-width: 1320px; margin: 0 auto 22px; display: grid; grid-template-columns: 1.25fr 0.75fr; align-items: end; column-gap: 7vw; }
 .eyebrow, .section-number { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: uppercase; }
 .eyebrow { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px; margin: 0 0 16px; }
 .eyebrow span { width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
-.hero-copy h1 { font-size: clamp(54px, 6vw, 84px); line-height: 0.9; margin: 0; font-weight: 800; letter-spacing: 0; }
+.hero-copy h2 { font-size: clamp(48px, 5.5vw, 78px); line-height: 0.92; margin: 0; font-weight: 800; letter-spacing: 0; }
 .hero-intro { margin: 0 0 3px; font-size: 17px; line-height: 1.65; max-width: 570px; color: #3f4943; }
+.hero-intro strong { color: var(--ink); }
 
 .workspace { max-width: 1320px; height: clamp(420px, calc(100vh - 300px), 650px); min-height: 420px; margin: 0 auto; display: grid; grid-template-columns: 278px 1fr; background: var(--white); border: 1px solid #bfc4bc; box-shadow: 0 24px 60px rgba(34, 45, 38, 0.12); overflow: hidden; }
 .workspace > * { min-height: 0; }
@@ -218,8 +229,13 @@ legend { padding: 0; margin: 0 0 10px; font-family: var(--mono); font-size: 9px;
   .site-header { height: 62px; padding: 0 18px; }
   .brand { font-size: 17px; }
   .header-cta { padding: 8px 10px; font-size: 10px; }
-  .product-hero { padding: 34px 14px 48px; }
-  .hero-copy h1 { font-size: 55px; }
+  .poster-visual { height: auto; aspect-ratio: 1730 / 909; }
+  .poster-visual img { object-fit: contain; }
+  .poster-actionbar { min-height: 104px; align-items: flex-start; flex-direction: column; padding: 15px 18px 17px; gap: 13px; }
+  .poster-actionbar > span { line-height: 1.45; }
+  .poster-actionbar button { width: 100%; justify-content: space-between; }
+  .product-hero { padding: 70px 14px 72px; }
+  .hero-copy h2 { font-size: 45px; }
   .hero-intro { font-size: 14px; line-height: 1.55; }
   .workspace { height: auto; min-height: 0; grid-template-columns: 1fr; }
   .workspace-controls { padding: 16px; }

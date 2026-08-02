@@ -22,6 +22,9 @@ test("server-renders the GeoPredict product experience", async () => {
   const html = await response.text();
   assert.match(html, /<title>GeoPredict \| Place-aware AI for spatial prediction<\/title>/i);
   assert.match(html, /AI that knows/);
+  assert.match(html, /src="\/og\.png"/);
+  assert.match(html, /Public-data demonstration/);
+  assert.match(html, /1,000 public Seattle housing records/);
   assert.match(html, /Interactive GeoPredict product demonstration/);
   assert.match(html, /TabPFN-GSA/);
   assert.match(html, /GeoAggregator/);

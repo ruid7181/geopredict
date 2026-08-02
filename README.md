@@ -5,7 +5,9 @@ GeoPredict is a product demonstrator for place-aware spatial prediction. It unif
 - **TabPFN-GSA** for rapid inference on smaller geospatial tabular datasets.
 - **GeoAggregator** for larger or more customised trainable spatial models.
 
-The interactive Seattle housing demo shows the shared output contract: prediction, uncertainty and spatial validation error maps.
+The generated GeoPredict map artwork is used as the full-width opening visual. The interactive demo beneath it loads 1,000 public Seattle housing records and shows the shared output contract: prediction, uncertainty and spatial validation error maps.
+
+The locations, housing attributes and observed log prices are real dataset values. Predicted values, uncertainty and error are explicitly labelled as interface previews until exported benchmark results are connected.
 
 ## Local development
 
