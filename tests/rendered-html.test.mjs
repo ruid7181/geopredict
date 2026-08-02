@@ -27,8 +27,9 @@ test("server-renders the GeoPredict product experience", async () => {
   assert.match(html, /1,000 public Seattle housing records/);
   assert.match(html, /Interactive GeoPredict product demonstration/);
   assert.match(html, /See more than a prediction/);
-  assert.match(html, /Watch a spatial table become a decision-ready map/);
-  assert.match(html, /Pause workflow animation/);
+  assert.match(html, /GeoPredict in 18 seconds/);
+  assert.match(html, /workflow-explainer\.mp4/);
+  assert.match(html, /18 seconds \/ no audio/);
   assert.match(html, /Published benchmark evidence/);
   assert.match(html, /0\.919/);
   assert.match(html, /4\.6K/);
@@ -61,9 +62,9 @@ test("keeps the finished site free of starter preview code", async () => {
   assert.match(app, /AAAI-25 paper/);
   assert.match(app, /AAAI\/article\/view\/33259/);
   assert.match(app, /IJGIS study/);
-  assert.match(app, /window\.setInterval/);
   assert.match(app, /prefers-reduced-motion/);
-  assert.match(app, /aria-label="Workflow stages"/);
+  assert.match(app, /autoPlay muted loop playsInline controls/);
+  assert.match(app, /workflow-explainer-poster\.png/);
   assert.doesNotMatch(app, /<canvas|bezierCurveTo/);
   assert.doesNotMatch(`${page}\n${layout}\n${app}\n${packageJson}`, /SkeletonPreview|codex-preview|react-loading-skeleton/);
 });
