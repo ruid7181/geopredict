@@ -226,7 +226,16 @@ legend { padding: 0; margin: 0 0 10px; font-family: var(--mono); font-size: 9px;
 }
 
 @media (max-height: 800px) and (min-width: 721px) {
-  .workspace-controls { padding-top: 18px; padding-bottom: 18px; }
+  .workspace-controls { padding: 14px 16px; }
+  .control-heading { padding-bottom: 12px; }
+  .data-summary { padding: 12px 0; }
+  fieldset { padding-top: 12px; }
+  legend { margin-bottom: 7px; }
+  .route-switch { gap: 5px; }
+  .route-switch button { padding: 8px 10px; }
+  .route-result { padding: 12px 11px; margin-top: 7px; }
+  .route-result strong { font-size: 16px; }
+  .route-result p { margin-top: 5px; line-height: 1.35; }
   .run-status { display: none; }
 }
 

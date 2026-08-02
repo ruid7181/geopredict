@@ -46,6 +46,8 @@ test("keeps the finished site free of starter preview code", async () => {
   assert.match(app, /"prediction" \| "uncertainty" \| "error"/);
   assert.match(app, /\+proj=utm \+zone=10/);
   assert.match(app, /tile\.openstreetmap\.org/);
+  assert.match(app, /Rui Deng.*Ziqi Li.*Mingshu Wang/s);
+  assert.match(app, /Ziqi Li<\/strong><span>Research and development/);
   assert.doesNotMatch(app, /<canvas|bezierCurveTo/);
   assert.doesNotMatch(`${page}\n${layout}\n${app}\n${packageJson}`, /SkeletonPreview|codex-preview|react-loading-skeleton/);
 });
