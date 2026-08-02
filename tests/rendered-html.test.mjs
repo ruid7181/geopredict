@@ -47,8 +47,8 @@ test("keeps the finished site free of starter preview code", async () => {
   assert.match(app, /\+proj=utm \+zone=10/);
   assert.match(app, /tile\.openstreetmap\.org/);
   assert.match(app, /Rui Deng.*Ziqi Li.*Mingshu Wang/s);
-  assert.match(app, /Ziqi Li<\/strong><span>Research and development/);
-  assert.match(app, /Mingshu Wang<\/strong><span>Research lead and corresponding author/);
+  assert.match(app, /Ziqi Li<\/strong><span>Research lead/);
+  assert.match(app, /Mingshu Wang<\/strong><span>Research lead/);
   assert.match(app, /gaValue.*gaUncertainty.*gaError/s);
   assert.match(app, /<span>TabPFN-GSA<\/span>.*<span>GeoAggregator<\/span>/s);
   assert.doesNotMatch(app, /<canvas|bezierCurveTo/);

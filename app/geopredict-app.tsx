@@ -439,7 +439,7 @@ export function GeoPredictApp() {
 
       <section className="about-section" id="about">
         <div><p className="section-number">PROJECT TEAM</p><h2>Open tools for geographically responsible AI.</h2></div>
-        <div className="team-list"><div><strong>Rui Deng</strong><span>Technical lead</span></div><div><strong>Ziqi Li</strong><span>Research and development</span></div><div><strong>Mingshu Wang</strong><span>Research lead and corresponding author</span></div></div>
+        <div className="team-list"><div><strong>Rui Deng</strong><span>Technical lead</span></div><div><strong>Ziqi Li</strong><span>Research lead</span></div><div><strong>Mingshu Wang</strong><span>Research lead</span></div></div>
         <div className="application-note"><span>Prototypes for Humanity 2026</span><p>GeoPredict is being developed as an open toolkit and demonstrator for spatially reliable AI.</p><a href="https://www.prototypesforhumanity.com/latestnews/stories/how-to-apply" target="_blank" rel="noreferrer">View programme <span>↗</span></a></div>
       </section>
 
