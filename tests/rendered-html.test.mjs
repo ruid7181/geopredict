@@ -45,7 +45,7 @@ test("keeps the finished site free of starter preview code", async () => {
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/geopredict-app.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readFile(new URL("../pages/entry.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../github-pages/entry.tsx", import.meta.url), "utf8"),
     readFile(new URL("../.github/workflows/pages.yml", import.meta.url), "utf8"),
     readFile(new URL("../vite.pages.config.ts", import.meta.url), "utf8"),
   ]);
@@ -57,8 +57,10 @@ test("keeps the finished site free of starter preview code", async () => {
   assert.match(app, /\+proj=utm \+zone=10/);
   assert.match(app, /tile\.openstreetmap\.org/);
   assert.match(app, /Rui Deng.*Ziqi Li.*Mingshu Wang/s);
-  assert.match(app, /Ziqi Li<\/strong><span>Research lead/);
-  assert.match(app, /Mingshu Wang<\/strong><span>Research lead/);
+  assert.match(app, /Rui\.Deng \[at\] glasgow\.ac\.uk/);
+  assert.match(app, /Ziqi\.Li \[at\] fsu\.edu/);
+  assert.match(app, /Mingshu\.Wang \[at\] glasgow\.ac\.uk/);
+  assert.doesNotMatch(app, /Humanity|Prototypes|View programme/i);
   assert.match(app, /gaValue.*gaUncertainty.*gaError/s);
   assert.match(app, /<span>TabPFN-GSA<\/span>.*<span>GeoAggregator<\/span>/s);
   assert.match(app, /they are not benchmark claims/);

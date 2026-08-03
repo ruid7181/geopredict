@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 const basePath = process.env.GITHUB_PAGES_BASE_PATH?.replace(/\/$/, "") ?? "";
 
 export default defineConfig({
-  root: "pages",
+  root: "github-pages",
   base: basePath ? `${basePath}/` : "/",
   publicDir: "../public",
   plugins: [react()],

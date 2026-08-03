@@ -609,8 +609,11 @@ export function GeoPredictApp() {
 
       <section className="about-section" id="about">
         <div><p className="section-number">PROJECT TEAM</p><h2>Open tools for geographically responsible AI.</h2></div>
-        <div className="team-list"><div><strong>Rui Deng</strong><span>Technical lead</span></div><div><strong>Ziqi Li</strong><span>Research lead</span></div><div><strong>Mingshu Wang</strong><span>Research lead</span></div></div>
-        <div className="application-note"><span>Prototypes for Humanity 2026</span><p>GeoPredict is being developed as an open toolkit and demonstrator for spatially reliable AI.</p><a href="https://www.prototypesforhumanity.com/latestnews/stories/how-to-apply" target="_blank" rel="noreferrer">View programme <span>↗</span></a></div>
+        <div className="team-list">
+          <div><strong>Rui Deng</strong><span>Technical lead · University of Glasgow</span><span className="team-email">Rui.Deng [at] glasgow.ac.uk</span></div>
+          <div><strong>Ziqi Li</strong><span>Research lead · Florida State University</span><span className="team-email">Ziqi.Li [at] fsu.edu</span></div>
+          <div><strong>Mingshu Wang</strong><span>Research lead · University of Glasgow</span><span className="team-email">Mingshu.Wang [at] glasgow.ac.uk</span></div>
+        </div>
       </section>
 
       <footer className="site-footer"><a className="brand footer-brand" href="#top"><LogoMark /><span>GeoPredict</span></a><p>Place-aware AI for spatial prediction.</p><div><a href="https://github.com/ruid7181/TabPFN-GSA" target="_blank" rel="noreferrer">TabPFN-GSA</a><a href="https://github.com/ruid7181/GA-sklearn" target="_blank" rel="noreferrer">GeoAggregator</a></div></footer>

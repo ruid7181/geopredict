@@ -252,7 +252,7 @@ legend { padding: 0; margin: 0 0 10px; font-family: var(--mono); font-size: 9px;
 .paper-card { background: var(--white); border: 1px solid var(--line); padding: 15px 15px 25px; }
 .paper-image { height: 245px; display: grid; place-items: center; background: #edf0ea; overflow: hidden; margin-bottom: 20px; }
 .paper-image img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-.paper-card > span, .application-note > span { font-family: var(--mono); font-size: 9px; text-transform: uppercase; color: var(--muted); }
+.paper-card > span { font-family: var(--mono); font-size: 9px; text-transform: uppercase; color: var(--muted); }
 .paper-card h3 { font-size: 28px; margin: 9px 0 6px; }
 .paper-card p { min-height: 42px; margin: 0 0 24px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .paper-card > a { border-bottom: 1px solid var(--ink); padding-bottom: 3px; font-size: 11px; font-weight: 800; }
@@ -271,15 +271,13 @@ legend { padding: 0; margin: 0 0 10px; font-family: var(--mono); font-size: 9px;
 .impact-uses h3 { font-size: 20px; margin: 54px 0 7px; }
 .impact-uses p { color: #56625b; font-size: 11px; line-height: 1.55; max-width: 220px; margin: 0; }
 
-.about-section { display: grid; grid-template-columns: 1.15fr .7fr .65fr; gap: 7vw; }
+.about-section { display: grid; grid-template-columns: 1.15fr .85fr; gap: 7vw; }
 .about-section h2 { font-size: clamp(38px, 4vw, 64px); line-height: 1.05; max-width: 670px; margin: 30px 0 0; }
 .team-list { align-self: end; }
-.team-list div { display: flex; flex-direction: column; gap: 3px; padding: 13px 0; border-top: 1px solid var(--line); }
+.team-list div { display: flex; flex-direction: column; gap: 4px; padding: 15px 0; border-top: 1px solid var(--line); }
 .team-list strong { font-size: 13px; }
 .team-list span { font-size: 10px; color: var(--muted); }
-.application-note { align-self: end; background: var(--yellow); padding: 24px; }
-.application-note p { font-size: 12px; line-height: 1.6; margin: 18px 0 38px; }
-.application-note a { font-size: 11px; font-weight: 800; display: flex; justify-content: space-between; border-top: 1px solid rgba(23,33,27,.4); padding-top: 12px; }
+.team-list .team-email { font-family: var(--mono); color: var(--ink); overflow-wrap: anywhere; }
 .site-footer { min-height: 160px; background: var(--ink); color: white; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; padding: 30px 6vw; }
 .footer-brand .logo-mark::before, .footer-brand .logo-mark::after { background: white; }
 .site-footer > p { text-align: center; color: #aeb8b2; font-size: 11px; }
@@ -304,7 +302,6 @@ legend { padding: 0; margin: 0 0 10px; font-family: var(--mono); font-size: 9px;
   .evidence-note { grid-column: 1 / -1; }
   .evidence-note h3 { margin: 28px 0; }
   .about-section { grid-template-columns: 1fr 1fr; }
-  .about-section > div:first-child { grid-column: 1 / -1; }
 }
 
 @media (max-height: 800px) and (min-width: 721px) {
@@ -363,7 +360,7 @@ legend { padding: 0; margin: 0 0 10px; font-family: var(--mono); font-size: 9px;
   .output-steps > div:nth-child(4) { border-top: 1px solid #9fa9a1; }
   .problem-band, .section-heading, .section-heading.light, .impact-section, .about-section { grid-template-columns: 1fr; }
   .problem-band { gap: 30px; }
-  .problem-band .failure-list, .section-heading > p:last-child, .about-section > div:first-child { grid-column: auto; }
+  .problem-band .failure-list, .section-heading > p:last-child { grid-column: auto; }
   .problem-band h2, .section-heading h2, .impact-copy h2, .about-section h2 { font-size: 42px; }
   .section-heading { gap: 25px; margin-bottom: 48px; }
   .workflow-film { padding: 64px 14px 72px; }
