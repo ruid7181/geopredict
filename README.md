@@ -29,6 +29,10 @@ pnpm build
 node --test tests/rendered-html.test.mjs
 ```
 
+## GitHub Pages
+
+The `pages.yml` workflow builds a static copy under the repository subpath and deploys it with GitHub Pages. The repository must use **Settings → Pages → Source: GitHub Actions**.
+
 ## Sources
 
 - [TabPFN-GSA](https://github.com/ruid7181/TabPFN-GSA)

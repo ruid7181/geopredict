@@ -24,6 +24,7 @@ type PlacePoint = {
 
 const utmZone10North = "+proj=utm +zone=10 +datum=WGS84 +units=m +no_defs";
 const wgs84 = "+proj=longlat +datum=WGS84 +no_defs";
+const publicAsset = (path: string) => `${import.meta.env.BASE_URL.replace(/\/$/, "")}${path}`;
 
 const engineLabels: Record<Route, string> = {
   fast: "TabPFN-GSA",
@@ -395,7 +396,10 @@ function WorkflowFilm() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) videoRef.current?.pause();
+    const video = videoRef.current;
+    if (!video) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) video.pause();
+    else void video.play().catch(() => undefined);
   }, []);
 
   return (
@@ -406,8 +410,8 @@ function WorkflowFilm() {
         <p>Watch one spatial table move through diagnosis, model routing and geographic validation into prediction, error and uncertainty maps.</p>
       </div>
       <div className="workflow-film-media">
-        <video ref={videoRef} autoPlay muted loop playsInline controls preload="metadata" poster="/video/workflow-explainer-poster.png" aria-describedby="workflow-film-caption">
-          <source src="/video/workflow-explainer.mp4" type="video/mp4" />
+        <video ref={videoRef} autoPlay muted loop playsInline controls preload="metadata" poster={publicAsset("/video/workflow-explainer-poster.png")} aria-describedby="workflow-film-caption">
+          <source src={publicAsset("/video/workflow-explainer.mp4")} type="video/mp4" />
           Your browser does not support embedded video.
         </video>
         <div className="workflow-film-caption" id="workflow-film-caption"><span>GeoPredict workflow film</span><span>18 seconds / no audio</span></div>
@@ -428,7 +432,7 @@ export function GeoPredictApp() {
   const engine = engineLabels[route];
 
   useEffect(() => {
-    fetch("/data/seattle-housing-demo.csv")
+    fetch(publicAsset("/data/seattle-housing-demo.csv"))
       .then((response) => response.text())
       .then((csv) => setPoints(parseDemoData(csv)))
       .catch(() => undefined);
@@ -462,7 +466,7 @@ export function GeoPredictApp() {
       <section className="poster-hero" id="top" aria-labelledby="site-title">
         <h1 className="sr-only" id="site-title">GeoPredict: AI that knows where it is.</h1>
         <div className="poster-visual">
-          <img src="/og.png" alt="GeoPredict concept artwork showing a place-aware prediction map" fetchPriority="high" />
+          <img src={publicAsset("/og.png")} alt="GeoPredict concept artwork showing a place-aware prediction map" fetchPriority="high" />
         </div>
         <div className="poster-actionbar">
           <span>Concept artwork / workflow film and live Seattle demonstration below</span>
@@ -581,12 +585,12 @@ export function GeoPredictApp() {
         <PublishedEvidence />
         <div className="evidence-grid">
           <article className="paper-card">
-            <div className="paper-image"><img src="/research/geoaggregator-architecture.png" alt="GeoAggregator research architecture diagram" /></div>
+            <div className="paper-image"><img src={publicAsset("/research/geoaggregator-architecture.png")} alt="GeoAggregator research architecture diagram" /></div>
             <span>AAAI 2025</span><h3>GeoAggregator</h3><p>An Efficient Transformer Model for Geo-Spatial Tabular Data</p>
             <a href="https://ojs.aaai.org/index.php/AAAI/article/view/33259" target="_blank" rel="noreferrer">Read publication</a>
           </article>
           <article className="paper-card">
-            <div className="paper-image"><img src="/research/gsa-attention.png" alt="Geospatial sparse attention method diagram" /></div>
+            <div className="paper-image"><img src={publicAsset("/research/gsa-attention.png")} alt="Geospatial sparse attention method diagram" /></div>
             <span>IJGIS 2026</span><h3>TabPFN-GSA</h3><p>Do foundation models work for geospatial tabular data?</p>
             <a href="https://doi.org/10.1080/13658816.2026.2691066" target="_blank" rel="noreferrer">Read publication</a>
           </article>

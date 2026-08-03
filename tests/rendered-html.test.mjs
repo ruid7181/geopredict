@@ -40,11 +40,14 @@ test("server-renders the GeoPredict product experience", async () => {
 });
 
 test("keeps the finished site free of starter preview code", async () => {
-  const [page, layout, app, packageJson] = await Promise.all([
+  const [page, layout, app, packageJson, pagesExporter, pagesWorkflow, viteConfig] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/geopredict-app.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/export-pages.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../.github/workflows/pages.yml", import.meta.url), "utf8"),
+    readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /<GeoPredictApp \/>/);
@@ -65,6 +68,13 @@ test("keeps the finished site free of starter preview code", async () => {
   assert.match(app, /prefers-reduced-motion/);
   assert.match(app, /autoPlay muted loop playsInline controls/);
   assert.match(app, /workflow-explainer-poster\.png/);
+  assert.match(app, /import\.meta\.env\.BASE_URL/);
+  assert.match(pagesExporter, /\.nojekyll/);
+  assert.match(pagesExporter, /_vinext_fonts/);
+  assert.match(pagesWorkflow, /actions\/configure-pages@v5/);
+  assert.match(pagesWorkflow, /actions\/upload-pages-artifact@v4/);
+  assert.match(pagesWorkflow, /actions\/deploy-pages@v4/);
+  assert.match(viteConfig, /GITHUB_PAGES_BASE_PATH/);
   assert.doesNotMatch(app, /<canvas|bezierCurveTo/);
   assert.doesNotMatch(`${page}\n${layout}\n${app}\n${packageJson}`, /SkeletonPreview|codex-preview|react-loading-skeleton/);
 });
