@@ -10,8 +10,8 @@
   --teal: #58b6a7;
   --yellow: #f4cf58;
   --coral: #f05d3b;
-  --sans: var(--font-manrope), Arial, sans-serif;
-  --mono: var(--font-plex-mono), monospace;
+  --sans: var(--font-manrope, Arial), Arial, sans-serif;
+  --mono: var(--font-plex-mono, "Courier New"), monospace;
 }
 
 * { box-sizing: border-box; }
