@@ -35,6 +35,11 @@ test("server-renders the GeoPredict product experience", async () => {
   assert.match(html, /4\.6K/);
   assert.match(html, /TabPFN-GSA/);
   assert.match(html, /GeoAggregator/);
+  assert.match(html, /aria-label="Explore GeoPredict"/);
+  for (const id of ["demo", "workflow", "engines", "diagnostics", "evidence"]) {
+    assert.match(html, new RegExp(`href="#${id}"`));
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
   assert.match(html, /property="og:image" content="http:\/\/localhost(?::3000)?\/og\.png"/i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import proj4 from "proj4";
+import { ChartNoAxesCombined, Crosshair, Grid3X3, Layers, Play } from "lucide-react";
 import type { LayerGroup, Map as LeafletMap } from "leaflet";
 
 type Layer = "prediction" | "uncertainty" | "error";
@@ -304,7 +305,7 @@ function DemoDiagnostics({ points, route }: { points: PlacePoint[]; route: Route
   }, [points, route]);
 
   return (
-    <section className="diagnostics-section" aria-labelledby="diagnostics-title">
+    <section className="diagnostics-section" id="diagnostics" aria-labelledby="diagnostics-title">
       <div className="diagnostics-heading">
         <p className="section-number">LIVE OUTPUTS</p>
         <div><h2 id="diagnostics-title">See more than a prediction.</h2><p>Three diagnostics update with the selected engine. They describe the Seattle interface preview; they are not benchmark claims.</p></div>
@@ -466,7 +467,23 @@ export function GeoPredictApp() {
       <section className="poster-hero" id="top" aria-labelledby="site-title">
         <h1 className="sr-only" id="site-title">GeoPredict: AI that knows where it is.</h1>
         <div className="poster-visual">
-          <img src={publicAsset("/og.png")} alt="GeoPredict concept artwork showing a place-aware prediction map" fetchPriority="high" />
+          <nav className="poster-nav" aria-label="Explore GeoPredict">
+            {[
+              { id: "demo", label: "Explore the map", Icon: Crosshair },
+              { id: "workflow", label: "Watch the workflow", Icon: Play },
+              { id: "engines", label: "Compare model routes", Icon: Layers },
+              { id: "diagnostics", label: "Explore model outputs", Icon: Grid3X3 },
+              { id: "evidence", label: "View research evidence", Icon: ChartNoAxesCombined },
+            ].map(({ id, label, Icon }) => (
+              <a href={`#${id}`} key={id} aria-label={label}>
+                <Icon size={26} strokeWidth={1.8} aria-hidden="true" />
+                <span className="poster-nav-tooltip">{label}</span>
+              </a>
+            ))}
+          </nav>
+          <div className="poster-artwork">
+            <img src={publicAsset("/og.png")} alt="GeoPredict: AI that knows where it is. Concept illustration of a place-aware prediction map." fetchPriority="high" />
+          </div>
         </div>
         <div className="poster-actionbar">
           <span>Concept artwork / workflow film and live Seattle demonstration below</span>
@@ -562,7 +579,7 @@ export function GeoPredictApp() {
         <div className="failure-list"><span>Spatial leakage <b>01</b></span><span>Hidden local failure <b>02</b></span><span>False confidence <b>03</b></span></div>
       </section>
 
-      <section className="engines-section">
+      <section className="engines-section" id="engines">
         <div className="section-heading light"><p className="section-number">03 / TWO ROUTES</p><h2>The right amount of model for the task.</h2></div>
         <div className="engine-grid">
           <article className="engine-card fast-engine">
